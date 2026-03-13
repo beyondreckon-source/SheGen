@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheGen | Women Harassment Detection</title>
+  <link rel="icon" type="image/png" href="/static/shegen-logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid #334155;
+      padding: 1rem 1.5rem;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .header-brand { display: flex; align-items: center; gap: 1rem; }
+    .btn-api-docs {
+      padding: 0.5rem 1rem;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #94a3b8;
+      background: rgba(30, 41, 59, 0.6);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-api-docs:hover { background: rgba(51, 65, 85, 0.8); color: #e2e8f0; }
+    .logo-box {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-box img { width: 56px; height: 56px; object-fit: contain; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header h1 .she { color: #ec4899; }
+    .header h1 .gen { color: #a855f7; }
+    .header p { font-size: 0.875rem; color: #64748b; }
+
+    .main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    @media (min-width: 1024px) {
+      .grid { grid-template-columns: 1fr 2fr; }
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #475569;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    .card-queue { overflow: hidden; }
+
+    .panel-title { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .panel-title svg { width: 20px; height: 20px; color: #34d399; }
+    .panel-title h2 { font-size: 1.125rem; font-weight: 600; }
+    .panel-desc { font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #475569;
+      border-radius: 12px;
+      color: #f1f5f9;
+      font-size: 0.875rem;
+      resize: none;
+      margin-bottom: 1rem;
+    }
+    textarea:focus { outline: 2px solid rgba(16, 185, 129, 0.5); outline-offset: 0; }
+    textarea::placeholder { color: #64748b; }
+
+    .btn-analyze {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, #059669, #10b981);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-analyze:hover:not(:disabled) {
+      background: linear-gradient(135deg, #047857, #059669);
+      transform: translateY(-1px);
+    }
+    .btn-analyze:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .result-box, .error-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+    .result-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #475569;
+    }
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 0.875rem;
+    }
+    .hidden { display: none !important; }
+
+    .queue-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #475569;
+    }
+    .queue-title { display: flex; align-items: center; gap: 0.5rem; }
+    .queue-title svg { width: 20px; height: 20px; color: #22d3ee; }
+    .queue-title h2 { font-size: 1.125rem; font-weight: 600; }
+
+    select {
+      padding: 0.5rem 1rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    select:focus { outline: 2px solid rgba(16, 185, 129, 0.5); }
+
+    .queue-list {
+      max-height: 580px;
+      overflow-y: auto;
+      padding: 1.25rem;
+    }
+    .queue-list::-webkit-scrollbar { width: 6px; }
+    .queue-list::-webkit-scrollbar-track { background: rgba(30,41,59,0.5); border-radius: 3px; }
+    .queue-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+    .queue-item {
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid #475569;
+      border-radius: 12px;
+    }
+    .queue-item:last-child { margin-bottom: 0; }
+    .queue-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+    .item-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .item-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+    .badge { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+    .badge-safe { color: #10b981; }
+    .badge-warning { color: #f59e0b; }
+    .badge-abusive { color: #ef4444; }
+    .badge-sev-low { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.4); }
+    .badge-sev-medium { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); }
+    .badge-sev-high { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+    .item-meta { font-size: 0.75rem; color: #64748b; }
+    .item-text { color: #cbd5e1; font-size: 0.875rem; margin-bottom: 0.5rem; }
+    .item-explanation { font-size: 0.75rem; color: #64748b; }
+    .item-footer { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid #475569; font-size: 0.75rem; color: #475569; }
+
+    .action-btns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .action-btn {
+      padding: 0.375rem 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+    }
+    .action-btn-approve { background: #059669; }
+    .action-btn-approve:hover { background: #047857; }
+    .action-btn-warn { background: #d97706; }
+    .action-btn-warn:hover { background: #b45309; }
+    .action-btn-escalate { background: #ea580c; }
+    .action-btn-escalate:hover { background: #c2410c; }
+    .action-btn-delete { background: #dc2626; }
+    .action-btn-delete:hover { background: #b91c1c; }
+
+    .btn-clear-all {
+      padding: 0.5rem 1rem;
+      border: 1px solid #dc2626;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #fca5a5;
+      background: rgba(220,38,38,0.2);
+      cursor: pointer;
+    }
+    .btn-clear-all:hover { background: rgba(220,38,38,0.4); }
+
+    .empty-state, .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      color: #64748b;
+    }
+    .empty-state svg, .error-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #475569; }
+    .error-state { color: #fca5a5; }
+    .error-state svg { color: rgba(239,68,68,0.5); }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #475569;
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .queue-footer {
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid #475569;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      z-index: 100;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .toast.toast-error { background: rgba(127,29,29,0.9); border-color: rgba(239,68,68,0.5); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="logo-box">
+          <img src="/static/shegen-logo.png" alt="SheGen" />
+        </div>
+        <div>
+          <h1><span class="she">She</span><span class="gen">Gen</span></h1>
+          <p>Women Harassment Detection · Safe &amp; Privacy-Preserving Moderation</p>
+        </div>
+      </div>
+      <a href="/docs" target="_blank" class="btn-api-docs" title="Open Swagger API documentation">Test API</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="grid">
+      <div class="card">
+        <div class="panel-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <h2>Analyze Message</h2>
+        </div>
+        <p class="panel-desc">Supports English, Hindi, Malayalam, Tamil. PII is masked automatically. Safe+low = auto-approved; abusive+high = auto-deleted.</p>
+        <textarea id="analyzeInput" placeholder="Paste or type a message to analyze..."></textarea>
+        <button id="analyzeBtn" class="btn-analyze">Analyze</button>
+        <div id="analyzeResult" class="result-box hidden"></div>
+        <div id="analyzeError" class="error-box hidden"></div>
+      </div>
+
+      <div class="card card-queue">
+        <div class="queue-header">
+          <div class="queue-title">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            <h2>Moderation Queue</h2>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+            <select id="statusFilter">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="warned">Warned</option>
+            <option value="escalated">Escalated</option>
+            <option value="deleted">Deleted</option>
+          </select>
+            <button id="clearAllBtn" class="btn-clear-all" title="Delete all moderation records">Delete All</button>
+          </div>
+        </div>
+        <div id="queueList" class="queue-list">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <p>Loading queue...</p>
+          </div>
+        </div>
+        <div id="queueFooter" class="queue-footer hidden"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const API = '/api';
+
+    async function req(path, opts = {}) {
+      const r = await fetch(API + path, {
+        headers: { 'Content-Type': 'application/json', ...opts.headers },
+        ...opts
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e.detail || r.statusText);
+      }
+      return r.json();
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type === 'error' ? ' toast-error' : '');
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    function clsColor(c) {
+      if (c === 'abusive') return 'badge-abusive';
+      if (c === 'warning') return 'badge-warning';
+      return 'badge-safe';
+    }
+    function sevClass(s) {
+      if (!s) return 'badge-sev-low';
+      s = (s + '').toLowerCase();
+      if (s === 'high') return 'badge-sev-high';
+      if (s === 'medium') return 'badge-sev-medium';
+      return 'badge-sev-low';
+    }
+
+    document.getElementById('analyzeBtn').onclick = async () => {
+      const text = document.getElementById('analyzeInput').value.trim();
+      if (!text) return;
+      const btn = document.getElementById('analyzeBtn');
+      const resultDiv = document.getElementById('analyzeResult');
+      const errDiv = document.getElementById('analyzeError');
+      btn.disabled = true;
+      btn.textContent = 'Analyzing...';
+      resultDiv.classList.add('hidden');
+      errDiv.classList.add('hidden');
+      try {
+        const r = await req('/analyze', { method: 'POST', body: JSON.stringify({ text }) });
+        const pct = Math.round((r.confidence || 0) * 100);
+        const barColor = pct < 50 ? '#f59e0b' : pct < 80 ? '#fbbf24' : '#10b981';
+        var statusBadge = '';
+        if (r.status === 'approved') statusBadge = '<span class="badge badge-sev-low" style="margin-left:auto">Auto-approved</span>';
+        else if (r.status === 'deleted') statusBadge = '<span class="badge badge-sev-high" style="margin-left:auto">Auto-deleted</span>';
+        resultDiv.innerHTML = '<div class="item-header"><span class="badge ' + clsColor(r.classification) + '">' + (r.classification || 'unknown') + '</span><span class="badge ' + sevClass(r.severity) + '">' + (r.severity || 'low') + '</span>' + statusBadge + '</div>' +
+          '<p class="item-meta" style="margin-bottom:8px">Confidence: ' + pct + '% · Language: ' + (r.language || '—') + (r.pii_detected ? ' · PII masked' : '') + '</p>' +
+          '<div style="height:6px;background:#475569;border-radius:4px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:4px"></div></div>' +
+          '<p class="item-text">' + (r.explanation || '—').replace(/</g, '&lt;') + '</p>' +
+          (r.masked_text ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #475569"><p class="item-meta">Masked text</p><p class="item-text" style="font-family:monospace">' + (r.masked_text || '').replace(/</g, '&lt;') + '</p></div>' : '');
+        resultDiv.classList.remove('hidden');
+        document.getElementById('analyzeInput').value = '';
+        loadQueue();
+        var toastMsg = r.status === 'approved' ? 'Auto-approved (safe + low)' : r.status === 'deleted' ? 'Auto-deleted (abusive + high)' : 'Analysis complete';
+        showToast(toastMsg);
+      } catch (e) {
+        errDiv.textContent = e.message;
+        errDiv.classList.remove('hidden');
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Analyze';
+      }
+    };
+
+    async function loadQueue() {
+      const status = document.getElementById('statusFilter').value;
+      const list = document.getElementById('queueList');
+      const footer = document.getElementById('queueFooter');
+      try {
+        const { items, total } = await req('/moderation_queue?status=' + status + '&limit=100&offset=0');
+        footer.classList.add('hidden');
+        if (items.length === 0) {
+          list.innerHTML = '<div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg><p style="font-weight:500">No ' + status + ' items</p><p style="font-size:0.875rem;margin-top:4px">Analyze a message to add to the queue</p></div>';
+        } else {
+          list.innerHTML = items.map(function(item) {
+            var actions = item.status === 'pending' ? '<div class="action-btns"><button class="action-btn action-btn-approve" onclick="doAction(' + item.id + ',\'approve\')">Approve</button><button class="action-btn action-btn-warn" onclick="doAction(' + item.id + ',\'warn_user\')">Warn</button><button class="action-btn action-btn-escalate" onclick="doAction(' + item.id + ',\'escalate\')">Escalate</button><button class="action-btn action-btn-delete" onclick="doAction(' + item.id + ',\'delete\')">Delete</button></div>' : '<span class="badge badge-sev-low">' + item.status + '</span>';
+            return '<div class="queue-item"><div class="item-header"><div class="item-badges"><span class="badge ' + clsColor(item.classification) + '">' + (item.classification || '—') + '</span><span class="badge ' + sevClass(item.severity) + '">' + (item.severity || 'low') + '</span><span class="item-meta">' + (item.language || '—') + ' · ' + Math.round((item.confidence || 0) * 100) + '%</span></div>' + actions + '</div><p class="item-text">' + (item.masked_text || '—').replace(/</g, '&lt;') + '</p><p class="item-explanation">' + (item.explanation || '—').replace(/</g, '&lt;') + '</p><p class="item-footer">ID ' + item.id + ' · ' + new Date(item.created_at).toLocaleString() + '</p></div>';
+          }).join('');
+          footer.textContent = 'Showing ' + items.length + ' of ' + total;
+          footer.classList.remove('hidden');
+        }
+      } catch (e) {
+        list.innerHTML = '<div class="error-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p style="font-weight:500">' + e.message.replace(/</g, '&lt;') + '</p></div>';
+      }
+    }
+
+    window.doAction = async function(id, action) {
+      try {
+        await req('/moderation_action', { method: 'POST', body: JSON.stringify({ moderation_id: id, action: action }) });
+        loadQueue();
+        showToast('Action: ' + action.replace('_', ' '));
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    };
+
+    document.getElementById('statusFilter').onchange = loadQueue;
+
+    document.getElementById('clearAllBtn').onclick = async function() {
+      if (!confirm('Delete ALL moderation records? This cannot be undone.')) return;
+      try {
+        var r = await fetch(API + '/moderation_queue', { method: 'DELETE' });
+        var data = await r.json();
+        if (!r.ok) throw new Error(data.detail || r.statusText);
+        showToast('Deleted ' + (data.deleted || 0) + ' record(s)');
+        loadQueue();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    };
+    document.getElementById('analyzeInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('analyzeBtn').click(); }
+    });
+
+    loadQueue();
+    setInterval(loadQueue, 8000);
+  </script>
+</body>
+</html>

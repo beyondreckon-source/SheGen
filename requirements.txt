@@ -1,0 +1,25 @@
+# FastAPI & Server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Groq & LangChain
+groq>=0.4.0
+langchain>=0.1.0
+langchain-groq>=0.0.6
+langchain-core>=0.1.0
+
+# Language Detection
+langdetect>=1.0.9
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+greenlet>=3.0.0
+
+# PII & Utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HTTP Client
+httpx>=0.26.0
