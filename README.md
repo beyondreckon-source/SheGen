@@ -37,6 +37,14 @@ GROQ_API_KEY=your_groq_api_key_here
 
 Get a key at [console.groq.com](https://console.groq.com).
 
+**When Groq is restricted (e.g. corporate firewall):** Use a custom LLM endpoint like TCS genailab. In `.env`, add:
+```
+LLM_BASE_URL=https://genailab.tcs.in/v1
+LLM_MODEL=azure_ai/genailab-maas-DeepSeek-V3-0324
+LLM_API_KEY=your_api_key
+SSL_VERIFY=false
+```
+
 ### 3. Install Dependencies
 
 ```bash

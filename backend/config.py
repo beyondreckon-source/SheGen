@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     """Application settings loaded from environment."""
 
     groq_api_key: str = ""
+    # Alternative LLM (when Groq is restricted) - e.g. TCS genailab
+    llm_base_url: str = ""  # e.g. https://genailab.tcs.in/v1
+    llm_model: str = ""  # e.g. azure_ai/genailab-maas-DeepSeek-V3-0324
+    llm_api_key: str = ""
+    ssl_verify: bool = True  # Set False for corporate proxy/SSL issues
     database_url: str = "sqlite+aiosqlite:///./moderation.db"
     log_level: str = "INFO"
     api_host: str = "0.0.0.0"

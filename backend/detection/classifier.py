@@ -1,13 +1,13 @@
 """
-Harassment classification using Groq LLM with LangChain.
-Uses multilingual embeddings for semantic similarity as a fallback/supplement.
+Harassment classification using LLM (Groq or custom endpoint) with LangChain.
+Supports TCS genailab / OpenAI-compatible APIs when Groq is restricted.
 """
 
 import json
 import logging
 from typing import Optional
 
-from langchain_groq import ChatGroq
+import httpx
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -53,15 +53,35 @@ JSON only, no other text:"""
 
 
 class HarassmentClassifier:
-    """Uses Groq LLM to classify content for harassment."""
+    """Uses LLM (Groq or custom endpoint) to classify content for harassment."""
 
     def __init__(self, model_name: str = "llama-3.3-70b-versatile"):
         settings = get_settings()
-        self._client = ChatGroq(
-            api_key=settings.groq_api_key,
-            model=model_name,
-            temperature=0.1,
-        )
+
+        if settings.llm_base_url and settings.llm_model and settings.llm_api_key:
+            # Custom endpoint (e.g. TCS genailab) when Groq is restricted
+            from langchain_openai import ChatOpenAI
+
+            http_client = httpx.Client(verify=settings.ssl_verify)
+            self._client = ChatOpenAI(
+                base_url=settings.llm_base_url.rstrip("/"),
+                model=settings.llm_model,
+                api_key=settings.llm_api_key,
+                temperature=0.1,
+                http_client=http_client,
+            )
+            logger.info("Using custom LLM endpoint: %s", settings.llm_base_url)
+        else:
+            # Default: Groq
+            from langchain_groq import ChatGroq
+
+            self._client = ChatGroq(
+                api_key=settings.groq_api_key,
+                model=model_name,
+                temperature=0.1,
+            )
+            logger.info("Using Groq LLM")
+
         self._prompt = ChatPromptTemplate.from_template(CLASSIFICATION_PROMPT)
         self._parser = JsonOutputParser()
 
